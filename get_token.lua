@@ -32,7 +32,6 @@ function get_token(params)
    end
 end
 
-print("In get_token.lua")
 local params = {}
 if "GET" == ngx.req.get_method() then
   params = ngx.req.get_uri_args()

@@ -335,7 +335,6 @@ function add_trans(usage)
    return string.sub(ret, 1, -2)
 end
 
-print("In nginx_3scale_access.lua")
 local params = {}
 local host = ngx.req.get_headers()["Host"]
 local auth_strat = ""
