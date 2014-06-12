@@ -67,6 +67,8 @@ function redirect_to_login(params)
    ngx.exit(ngx.HTTP_OK)
 end
 
+ngx.log(0, "In authorize.lua")
+
 local params = ngx.req.get_uri_args()
 local _ok, a_err = authorize(params)
 
