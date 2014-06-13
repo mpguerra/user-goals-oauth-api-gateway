@@ -86,13 +86,13 @@ end
 
 function M.connect_redis(red)
   redisurl = os.getenv("REDISTOGO_URL")
-  redisurl_connect = string.split(redisurl, ":")[3]
+  --redisurl_connect = string.split(redisurl, ":")[3]
   --redisurl_user = string.split(redisurl_connect, "@")[1]
   --redisurl_host = string.split(redisurl_connect, "@")[2]
   --redisurl_port = tonumber(string.split(redisurl, ":")[4])
   
   --local ok, err = red:connect(redisurl_host, redisurl_port)
-  local ok, err = red:connect(redisurl_host, 9191)
+  local ok, err = red:connect("viperfish.redistogo.com", 9191)
   if not ok then
     ngx.say("failed to connect: ", err)
     ngx.exit(ngx.HTTP_OK)
