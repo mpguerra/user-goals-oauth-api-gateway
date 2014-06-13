@@ -100,13 +100,13 @@ end
 function M.connect_redis(red)
   redisurl = os.getenv("REDISTOGO_URL")
   ngx.log(0,"Redis to go url: "..redisurl)
-  redisurl_connect = string.split(redisurl, ":")[2]
+  redisurl_connect = string.split(redisurl, ":")[3]
   ngx.log(0, "Connect string: "..redisurl_connect)
-  redisurl_user = string.split(redisurl_connect, "@")[0]
+  redisurl_user = string.split(redisurl_connect, "@")[1]
   ngx.log(0, "Password: "..redisurl_user)
-  redisurl_host = string.split(redisurl_connect, "@")[1]
+  redisurl_host = string.split(redisurl_connect, "@")[2]
   ngx.log(0, "Host: "..redisurl_host)
-  redisurl_port = tonumber(string.split(redisurl, ":")[3])
+  redisurl_port = tonumber(string.split(redisurl, ":")[4])
   ngx.log(0, "Port: "..redisurl_port)
   
   local ok, err = red:connect(redisurl_host, redisurl_port)
