@@ -88,6 +88,7 @@ function M.connect_redis(red)
   ngx.log(ngx.STDERR, 'connecting to redis')
   redisurl = os.getenv("REDISTOGO_URL")
   redisurl_connect = string.split(redisurl, ":")[3]
+  ngx.say("redisurl_connect_string: "..redisurl_connect)
   redisurl_user = string.split(redisurl_connect, "@")[1]
   redisurl_host = string.split(redisurl_connect, "@")[2]
   redisurl_port = string.split(redisurl, ":")[4]
