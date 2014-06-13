@@ -109,7 +109,7 @@ function M.connect_redis(red)
   redisurl_port = string.split(redisurl, ":")[4]
   ngx.log(0, "Port: "..redisurl_port)
   
-  local ok, err = red:connect(redisurl_host, tonumber(redisurl_port)
+  local ok, err = red:connect(redisurl_host, tonumber(redisurl_port))
   --local ok, err = red:connect("viperfish.redistogo.com", 9191)
   if not ok then
     ngx.say("failed to connect: ", err)
