@@ -86,9 +86,10 @@ end
 
 function M.connect_redis(red)
   ngx.log(ngx.STDERR, 'connecting to redis')
-  ngx.log(ngx.STDERR, os.getenv(REDISTOGO_URL))
-   -- local ok, err = red:connect("127.0.0.1", 6379)
-   local ok, err = red:connect(os.getenv(REDISTOGO_URL))
+  redisurl = os.getenv("REDISTOGO_URL")
+  ngx.log(ngx.STDERR, redisurl)
+   local ok, err = red:connect("127.0.0.1", 6379)
+   --local ok, err = red:connect(os.getenv(REDISTOGO_URL))
    if not ok then
       ngx.say("failed to connect: ", err)
       ngx.exit(ngx.HTTP_OK)
