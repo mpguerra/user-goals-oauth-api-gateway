@@ -85,14 +85,10 @@ function M.required_params_present(f_req, actual)
 end
 
 function M.connect_redis(red)
-  ngx.log(0, 'connecting to redis')
-  --local redistogo = string.split(os.getenv("REDISTOGO_URL"), ":")
-  --local redis_host = redistogo[1]
-  ngx.log(0, redis_host)
-  --local redis_port = redistogo[2]
-  ngx.log(0, redis_port)
-   local ok, err = red:connect("127.0.0.1", 6379)
-   --local ok, err = red:connect(redis_host, redis_port)
+  ngx.log(ngx.STDERR, 'connecting to redis')
+  ngx.log(ngx.STDERR, os.getenv(REDISTOGO_URL))
+   -- local ok, err = red:connect("127.0.0.1", 6379)
+   local ok, err = red:connect(os.getenv(REDISTOGO_URL))
    if not ok then
       ngx.say("failed to connect: ", err)
       ngx.exit(ngx.HTTP_OK)
