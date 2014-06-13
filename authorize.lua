@@ -21,6 +21,7 @@ function authorize(params)
    if ts.required_params_present(required_params, params) and
       params["response_type"] == 'code' and
       check_return_url(params.client_id, params.redirect_uri) then
+      ngx.log(0, "redirecting to login")
       redirect_to_login(params)
    elseif params["response_type"] ~= 'code' then
       return false, 'unsupported_response_type'
@@ -28,8 +29,8 @@ function authorize(params)
       ts.log(params)
       return false, 'invalid_request'
    end
-   ts.error("we should never be here")
-end
+      ts.error("we should never be here")
+   end
 
 -- returns a unique string for the client_id. it will be short lived
 function nonce(client_id)
