@@ -85,21 +85,19 @@ function M.required_params_present(f_req, actual)
 end
 
 function M.connect_redis(red)
-  ngx.log(ngx.STDERR, 'connecting to redis')
-  --redisurl = os.getenv("REDISTOGO_URL")
-  --redisurl_connect = string.split(redisurl, ":")[3]
-  --redisurl_user = string.split(redisurl_connect, "@")[1]
-  --redisurl_host = string.split(redisurl_connect, "@")[2]
-  --redisurl_port = string.split(redisurl, ":")[4]
-  --ngx.log(ngx.STDERR, redisurl)
-   --local ok, err = red:connect("127.0.0.1", 6379)
-  local ok, err = red:connect("viperfish.redistogo.com", 9191)
+  redisurl = os.getenv("REDISTOGO_URL")
+  redisurl_connect = string.split(redisurl, ":")[3]
+  redisurl_user = string.split(redisurl_connect, "@")[1]
+  redisurl_host = string.split(redisurl_connect, "@")[2]
+  redisurl_port = tonumber(string.split(redisurl, ":")[4])
+  
+  local ok, err = red:connect(redisurl_host, redisurl_port)
   if not ok then
     ngx.say("failed to connect: ", err)
     ngx.exit(ngx.HTTP_OK)
   end
 
-  local res, err = red:auth("0925e54ca0456ef7818ae3b97e90c6d6")
+  local res, err = red:auth(redisurl_user)
   if not res then
     ngx.say("failed to authenticate: ", err)
     return
