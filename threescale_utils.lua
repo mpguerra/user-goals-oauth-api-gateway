@@ -99,7 +99,7 @@ end
 
 function M.connect_redis(red)
   redisurl = os.getenv("REDISTOGO_URL")
-  ngx.log(0,"Redis to go url: "..redisurl)
+  ngx.log(0, "Redis to go url: "..redisurl)
   redisurl_connect = string.split(redisurl, ":")[3]
   ngx.log(0, "Connect string: "..redisurl_connect)
   redisurl_user = string.split(redisurl_connect, "@")[1]
