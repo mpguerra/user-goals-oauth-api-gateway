@@ -12,7 +12,9 @@ end
 function generate_access_token_for(client_id)
    local ok, err = red:connect("127.0.0.1", 6379)
    ok, err =  red:hgetall("c:".. client_id) -- code?
+   ts.log(ok)
    if ok[1] == nil then
+      ngx.log("epxired code")
       ngx.say("expired_code")
       return ngx.exit(ngx.HTTP_OK)
    else
