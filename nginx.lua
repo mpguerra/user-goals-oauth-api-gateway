@@ -326,6 +326,9 @@ if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
   service = service_2555417686521 --
   ngx.var.secret_token = service.secret_token
+  ngx.log(0,'Secret Token ='..ngx.var.secret_token)
+  ngx.log(0,'Secret Token ='..service.secret_token)
+  ngx.header["X-3scale-proxy-secret-token"] = service.secret_token
   params.access_token = parameters.access_token
   get_credentials_access_token(params , service_2555417686521)
   -- ngx.var.cached_key = "2555417686521" .. ":" .. params.access_token  -- no cache yet
