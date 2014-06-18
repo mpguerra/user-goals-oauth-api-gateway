@@ -12,7 +12,7 @@ no_match_headers = 'text/plain; charset=us-ascii',
 no_match_status = 404,
 auth_failed_status = 403,
 auth_missing_status = 403,
-secret_token = 'Shared_secret_sent_from_proxy_to_API_backend'
+secret_token = 'ThisIsASecretToken'
 }
 
 -- Logging Helpers
