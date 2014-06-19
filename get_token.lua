@@ -14,11 +14,11 @@ function generate_access_token_for(client_id)
    ok, err =  red:hgetall("c:".. client_id) -- code?
    ts.log(ok)
    if ok[1] == nil then
-      ngx.log("epxired code")
+      ngx.log(0,"expired code")
       ngx.say("expired_code")
       return ngx.exit(ngx.HTTP_OK)
    else
-      return red:array_to_hash(ok).pre_access_token
+      return red:array_to_hash(ok).pre_access_token..":"..red:array_to_hash(ok).user_id
    end
 end
 
@@ -33,8 +33,10 @@ local function store_token(client_id, token)
     ngx.exit(ngx.HTTP_OK)
   end
 
+  access_token = token:split(":")[1]
+
   ngx.header.content_type = "application/json; charset=utf-8"
-  ngx.say({'{"access_token": "'.. token .. '", "token_type": "bearer"}'})
+  ngx.say({'{"access_token": "'.. access_token .. '", "token_type": "bearer"}'})
   ngx.exit(ngx.HTTP_OK)
 end
 

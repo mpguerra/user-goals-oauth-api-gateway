@@ -36,7 +36,8 @@ if ts.required_params_present({'state'}, params) then
 						       client_secret = client_data.secret_id,
 						       redirect_uri = client_data.redirect_uri,
 						       pre_access_token = client_data.pre_access_token,
-						       code = code })
+						       code = code,
+                         user_id = params.username })
 
    ok, err =  red:expire("c:".. client_data.client_id, 60 * 10) -- code expires in 10 mins
 
