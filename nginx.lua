@@ -181,15 +181,13 @@ function extract_usage_2555417686521(request)
   local params = {}
 
   local args = get_auth_params(nil, method)
-
-  -- mapping rules go here, e.g
-  local m =  ngx.re.match(path,[=[^/]=])
-  
+             local m =  ngx.re.match(path,[=[^/api/([\w_\.-]+)/contacts\.json]=])
   if (m and method == "GET") then
-     -- rule: / --
-     table.insert(matched_rules, "/")
+     -- rule: /api/{username}/contacts.json --
+              params["username"] = m[1]
+         table.insert(matched_rules, "/api/{username}/contacts.json")
 
-     usage_t["hits"] = set_or_inc(usage_t, "hits", 1)
+         usage_t["get_contacts"] = set_or_inc(usage_t, "get_contacts", 1)
      found = true
   end
   

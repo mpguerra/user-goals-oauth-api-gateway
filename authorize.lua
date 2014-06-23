@@ -21,12 +21,11 @@ function authorize(params)
    if ts.required_params_present(required_params, params) and
       params["response_type"] == 'code' and
       check_return_url(params.client_id, params.redirect_uri) then
-      ngx.log(0, "redirecting to login")
       redirect_to_login(params)
    elseif params["response_type"] ~= 'code' then
       return false, 'unsupported_response_type'
    else
-      ts.log(params)
+      ngx.log(0, ts.dump(params))
       return false, 'invalid_request'
    end
       ts.error("we should never be here")
@@ -46,7 +45,7 @@ end
 -- this server.
 function redirect_to_login(params)
    local n = nonce(params.client_id)
-   ts.log("redirect_to_login")
+   ngx.log(0, "redirect_to_login")
 
    params.scope = params.scope
    ts.connect_redis(red)
