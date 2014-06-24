@@ -185,7 +185,7 @@ function extract_usage_2555417686521(request)
              local m =  ngx.re.match(path,[=[^/api/([\w_\.-]+)/contacts\.json]=])
   if (m and method == "GET") then
      -- rule: /api/{username}/contacts.json --
-         params["username"] = m[1]
+         params.username = m[1]
          table.insert(matched_rules, "/api/{username}/contacts.json")
 
          usage_t["get_contacts"] = set_or_inc(usage_t, "get_contacts", 1)
@@ -259,7 +259,7 @@ function authorize(auth_strat, params, service)
 end
 
 function oauth(params, service)
-  ngx.log(0, 'username: '..params["username"])
+  ngx.log(0, 'username: '..params.username)
   local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
     params.access_token .. params["username"]
     "&user_id="..
