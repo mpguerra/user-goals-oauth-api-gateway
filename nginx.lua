@@ -258,7 +258,7 @@ function authorize(auth_strat, params, service)
 end
 
 function oauth(params, service)
-  ngx.log(0, 'username: '..params["username"])
+  ngx.log(0, 'username: '..params.username)
   local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
     params.access_token ..":".. params.username
     "&user_id="..
