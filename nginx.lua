@@ -181,6 +181,7 @@ function extract_usage_2555417686521(request)
   local params = {}
 
   local args = get_auth_params(nil, method)
+  ngx.log(0,"Path= "..path)
              local m =  ngx.re.match(path,[=[^/api/([\w_\.-]+)/contacts\.json]=])
   if (m and method == "GET") then
      -- rule: /api/{username}/contacts.json --
@@ -324,6 +325,8 @@ local auth_strat = ""
 local service = {}
 if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
+  ngx.log(0,"parameters: ")
+  log(parameters)
   service = service_2555417686521 --
   ngx.var.secret_token = service.secret_token
   --ngx.header["X-3scale-proxy-secret-token"] = service.secret_token
