@@ -111,7 +111,7 @@ function M.connect_redis(red)
     ngx.exit(ngx.HTTP_OK)
   end
 
-  local res, err = red:auth("0925e54ca0456ef7818ae3b97e90c6d6")
+  local res, err = red:auth(redisurl_user)
   if not res then
     ngx.say("failed to authenticate: ", err)
     return
