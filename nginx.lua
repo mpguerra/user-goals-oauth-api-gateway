@@ -169,7 +169,7 @@ end
 
 matched_rules2 = ""
 
-function extract_usage_2555417686521(request)
+function extract_usage_2555417686521(params, request)
 
   local t = string.split(request," ")
   local method = t[1]
@@ -178,15 +178,13 @@ function extract_usage_2555417686521(request)
   local usage_t =  {}
   local m = ""
   local matched_rules = {}
-  --local params = {}
 
   local args = get_auth_params(nil, method)
-  ngx.log(0,"Path= "..path)
+  ngx.log(0,"Path")
              local m =  ngx.re.match(path,[=[^/api/([\w_\.-]+)/contacts\.json]=])
   if (m and method == "GET") then
      -- rule: /api/{username}/contacts.json --
          params.username = m[1]
-         ngx.log(0, "Username from extract usage= "..params.username)
          table.insert(matched_rules, "/api/{username}/contacts.json")
 
          usage_t["get_contacts"] = set_or_inc(usage_t, "get_contacts", 1)
@@ -260,7 +258,7 @@ function authorize(auth_strat, params, service)
 end
 
 function oauth(params, service)
-  ngx.log(0, 'username: '..params.username)
+  ngx.log(0, 'username: '..params["username"])
   local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
     params.access_token .. params["username"]
     "&user_id="..
@@ -337,7 +335,9 @@ if ngx.var.service_id == '2555417686521' then
   auth_strat = "oauth"
   ngx.var.service_id = "2555417686521"
   ngx.var.proxy_pass = "https://backend_address-book-app.herokuapp.com"
-  ngx.var.usage = extract_usage_2555417686521(ngx.var.request)
+  ngx.var.usage = extract_usage_2555417686521(params, ngx.var.request)
+  ngx.log(0, "params after extract_usage")
+  log(params)
 end
 
 ngx.var.credentials = build_query(params)
