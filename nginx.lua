@@ -180,7 +180,6 @@ function extract_usage_2555417686521(params, request)
   local matched_rules = {}
 
   local args = get_auth_params(nil, method)
-  ngx.log(0,"Path")
              local m =  ngx.re.match(path,[=[^/api/([\w_\.-]+)/contacts\.json]=])
   if (m and method == "GET") then
      -- rule: /api/{username}/contacts.json --
@@ -258,7 +257,6 @@ function authorize(auth_strat, params, service)
 end
 
 function oauth(params, service)
-  ngx.log(0, "username: "..params.username)
   local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
     params.access_token ..":".. params.username..
     "&user_id="..
@@ -317,15 +315,12 @@ function add_trans(usage)
     return string.sub(ret, 1, -2)
 end
 
-ngx.log(0, 'in nginx.lua')
 local params = {}
 local host = ngx.req.get_headers()["Host"]
 local auth_strat = ""
 local service = {}
 if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
-  ngx.log(0,"parameters: ")
-  log(parameters)
   service = service_2555417686521 --
   ngx.var.secret_token = service.secret_token
   --ngx.header["X-3scale-proxy-secret-token"] = service.secret_token
@@ -353,6 +348,7 @@ if get_debug_value() then
   ngx.header["X-3scale-credentials"]   = ngx.var.credentials
   ngx.header["X-3scale-usage"]         = ngx.var.usage
   ngx.header["X-3scale-hostname"]      = ngx.var.hostname
+  ngx.header["X-3scale-secret-token"]  = ngx.var.secret_token
 end
 
 authorize(auth_strat, params, service)
