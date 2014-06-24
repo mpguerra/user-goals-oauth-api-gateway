@@ -14,7 +14,6 @@ function generate_access_token_for(client_id)
    ok, err =  red:hgetall("c:".. client_id) -- code?
    ts.log(ok)
    if ok[1] == nil then
-      ngx.log(0,"expired code")
       ngx.say("expired_code")
       return ngx.exit(ngx.HTTP_OK)
    else
@@ -52,7 +51,6 @@ function get_token()
 
    local required_params = {'client_id', 'redirect_uri', 'client_secret', 'code', 'grant_type'}
 
-   ngx.log(0, ts.dump(params))
    if ts.required_params_present(required_params, params) and params['grant_type'] == 'authorization_code'  then
       local token = generate_access_token_for(params.client_id)
       store_token(params.client_id, token)
