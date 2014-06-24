@@ -1,6 +1,7 @@
 -- threescale_utils.lua
 local M = {} -- public interface
 
+<<<<<<< HEAD
 function string:split(delimiter)
   local result = { }
   local from = 1
@@ -14,6 +15,8 @@ function string:split(delimiter)
   return result
 end
 
+=======
+>>>>>>> c85285a9b97827b0429cb8e0fd8e2fa518a4fd38
 -- private
 -- Logging Helpers
 function M.show_table(t, ...)
@@ -41,6 +44,7 @@ end
 
 function M.log(content)
    if enabled == true then
+<<<<<<< HEAD
   if type(content) == "table" then
      M.log_message(M.show_table(content))
   else
@@ -48,6 +52,15 @@ function M.log(content)
   end
   M.newline()
 end
+=======
+     if type(content) == "table" then
+        M.log_message(M.show_table(content))
+     else
+        M.log_message(content)
+     end
+     M.newline()
+   end
+>>>>>>> c85285a9b97827b0429cb8e0fd8e2fa518a4fd38
 end
 
 -- End Logging Helpers
@@ -98,6 +111,7 @@ function M.required_params_present(f_req, actual)
 end
 
 function M.connect_redis(red)
+<<<<<<< HEAD
   redisurl = os.getenv("REDISTOGO_URL")
   redisurl_connect = string.split(redisurl, ":")[3]
   redisurl_user = string.split(redisurl_connect, "@")[1]
@@ -118,6 +132,14 @@ function M.connect_redis(red)
   end
 
   return ok, err
+=======
+   local ok, err = red:connect("127.0.0.1", 6379)
+   if not ok then
+      ngx.say("failed to connect: ", err)
+      ngx.exit(ngx.HTTP_OK)
+   end
+   return ok, err
+>>>>>>> c85285a9b97827b0429cb8e0fd8e2fa518a4fd38
 end
 
 -- error and exist
