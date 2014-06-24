@@ -12,7 +12,6 @@ no_match_headers = 'text/plain; charset=us-ascii',
 no_match_status = 404,
 auth_failed_status = 403,
 auth_missing_status = 403,
-secret_token = 'ThisIsASecretToken'
 }
 
 -- Logging Helpers
@@ -322,8 +321,6 @@ local service = {}
 if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
   service = service_2555417686521 --
-  ngx.var.secret_token = service.secret_token
-  --ngx.header["X-3scale-proxy-secret-token"] = service.secret_token
   params.access_token = parameters.access_token
   get_credentials_access_token(params , service_2555417686521)
   -- ngx.var.cached_key = "2555417686521" .. ":" .. params.access_token  -- no cache yet
@@ -331,8 +328,6 @@ if ngx.var.service_id == '2555417686521' then
   ngx.var.service_id = "2555417686521"
   ngx.var.proxy_pass = "https://backend_address-book-app.herokuapp.com"
   ngx.var.usage = extract_usage_2555417686521(params, ngx.var.request)
-  ngx.log(0, "params after extract_usage")
-  log(params)
 end
 
 ngx.var.credentials = build_query(params)
@@ -348,7 +343,6 @@ if get_debug_value() then
   ngx.header["X-3scale-credentials"]   = ngx.var.credentials
   ngx.header["X-3scale-usage"]         = ngx.var.usage
   ngx.header["X-3scale-hostname"]      = ngx.var.hostname
-  ngx.header["X-3scale-secret-token"]  = ngx.var.secret_token
 end
 
 authorize(auth_strat, params, service)
