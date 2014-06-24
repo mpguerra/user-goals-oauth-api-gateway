@@ -178,7 +178,7 @@ function extract_usage_2555417686521(request)
   local usage_t =  {}
   local m = ""
   local matched_rules = {}
-  local params = {}
+  --local params = {}
 
   local args = get_auth_params(nil, method)
   ngx.log(0,"Path= "..path)
@@ -186,6 +186,7 @@ function extract_usage_2555417686521(request)
   if (m and method == "GET") then
      -- rule: /api/{username}/contacts.json --
          params.username = m[1]
+         ngx.log(0, "Username from extract usage= "..params.username)
          table.insert(matched_rules, "/api/{username}/contacts.json")
 
          usage_t["get_contacts"] = set_or_inc(usage_t, "get_contacts", 1)
