@@ -2,49 +2,9 @@
 
 This is based on Taytay's excellent implementation of a 3scale API Proxy using Heroku: Taytay/api-proxy-3scale-heroku
 
-Please check out his [repo](Taytay/api-proxy-3scale-heroku) for the README and basic instructions on setting this up. 
+Please check out his [repo](https://www.github.com/Taytay/api-proxy-3scale-heroku) for the README and basic instructions on setting this up. 
 
-I have added some OAuth extensions on top of this to implement an API Gateway acting as an OAuth2 provider for a simple Address Book App API. I will outline how these work (as well as any additional set up steps where they differ from the original repo) using the [Address Book App API](mpguerra/address-book-app-api) as an example API. 
-
-Usage
----------
-
-#### Step 1: Get 3Scale and Heroku Accounts ####
-
-##### Step 1a: Get RedisToGo addon for Heroku #####
-
-The 3scale Nginx OAuth2 extension requires redis to be installed on the nginx server so we need to add Redis to our Heroku instance and modify the redis connection code to access the Redis instance. In my case I used RedisToGo since it was the only redis addon that offers a free option. 
-
-#### Step 2: Configure 3Scale Api Proxy and download Nginx config files ####
-
-You will need to choose oauth authentication mode from the API Settings for Authentication Mode. The following How To explains how to set this up for OAuth: https://support.3scale.net/howtos/api-configuration#oauth-nginx-proxy
-
-#### Step 3: Clone this repo ####
-
-#### Step 4: Rename the generated .conf files ####
-
-Personally I renamed mine to nginx.conf and nginx.lua, but you can call them anything you like as long as you refer to them correctly where necessary (e.g in nginx.conf )
-
-#### Step 5: Modify nginx.conf ####
-Make the following mandatory modifications to the nginx.conf file:
-
-#1. Add this line to the top of the file
-    daemon off;
-#2. Add this line to make the REDISTOGO_URL environment variable available to the .lua files
-    env REDISTOGO_URL;    
-#2. replace 'listen 80;' with:
-    listen ${{PORT}};
-#3. replace 'access_by_lua_file lua_tmp.lua;' with:
-    access_by_lua_file nginx.lua;
-
-See the sample **nginx.sample.conf** file for details, and for notes on other optional changes you can make.
-
-
-Test your API proxy using an app_id and app_key you get from your 3scale control panel. More info about these credentials [here](https://support.3scale.net/howtos/api-configuration/nginx-proxy)
-
-    $ curl http://<heroku-app-name>.herokuapp.com/v1/word/awesome.json\?app_id\=YOUR_USER_APP_ID\&app_key\=YOUR_USER_APP_KEY
-
-    {"word":"awesome","sentiment":4}%
+I have added some OAuth extensions on top of this to implement an API Gateway acting as an OAuth2 provider for a simple Address Book App API. I will outline how these work (as well as any additional set up steps where they differ from the original repo) using the [Address Book App API](https://www.github.com/mpguerra/address-book-app-api) as an example API. 
 
 Motivation
 --------
@@ -94,13 +54,61 @@ end
 
 #### 2. Ensuring access token is only valid for user that granted access ####
 
+Usage
+---------
 
+#### Step 1: Get 3Scale and Heroku Accounts ####
+
+##### Step 1a: Get RedisToGo addon for Heroku #####
+
+The 3scale Nginx OAuth2 extension requires redis to be installed on the nginx server so we need to add Redis to our Heroku instance and modify the redis connection code to access the Redis instance. In my case I used RedisToGo since it was the only redis addon that offers a free option. 
+
+#### Step 2: Configure 3Scale Api Proxy and download Nginx config files ####
+
+You will need to choose oauth authentication mode from the API Settings for Authentication Mode. The following How To explains how to set this up for OAuth: https://support.3scale.net/howtos/api-configuration#oauth-nginx-proxy
+
+#### Step 3: Clone this repo ####
+
+#### Step 4: Rename the generated .conf files ####
+
+Personally I renamed mine to nginx.conf and nginx.lua, but you can call them anything you like as long as you refer to them correctly where necessary (e.g in nginx.conf )
+
+#### Step 5: Modify nginx.conf ####
+Make the following mandatory modifications to the nginx.conf file:
+
+1. Add this line to the top of the file
+    daemon off;
+2. Add this line to make the REDISTOGO_URL environment variable available to the .lua files
+    env REDISTOGO_URL;    
+3. replace 'listen 80;' with:
+    listen ${{PORT}};
+4. replace 'access_by_lua_file lua_tmp.lua;' with:
+    access_by_lua_file nginx.lua;
+
+See the sample **nginx.sample.conf** file for details, and for notes on other optional changes you can make.
+
+#### Step 6: Test the workflow ####
+
+Once your Proxy is deployed, you can test it's working as expected. However, before you test the OAuth workflow, you will need to make sure that your User Authorization Server will call the /callback endpoint on your proxy once a user grants access, e.g http://<heroku-app-name>.herokuapp.com/callback. 
+
+When that's done, you can test your API proxy OAuth2 workflow using the google oauth playground (https://developers.google.com/oauthplayground/) or runscope's OAuth 2 Token Generator (https://www.runscope.com/oauth2_tool) with the oauth credentials (client_id and client_secret) you get from your 3scale control panel, making sure that the redirect url defined in 3scale matches that of the service you are using to test out your OAuth2 workflow (e.g https://www.runscope.com/oauth_tool/callback for Runscope and https://developers.google.com/oauthplayground/ for Google)
+
+The Authorize URL/Authorization endpoint will be: http://<heroku-app-name>.herokuapp.com/authorize
+The Access Token URL/Token endpoint will be: http://<heroku-app-name>.herokuapp.com/oauth/token
+
+This will go through the whole process of requesting an authorization code for a user and exchanging that for an access token which can then be used to access data for that user using the API.
+
+Now that you have an access token, you can call your API through the gateway as usual by sending the access token issued previously:
+
+  $ curl http://<heroku-app-name>.herokuapp.com/api/<username>/contacts.json\?access_token\=YOUR_ACCESS_TOKEN
+
+  {"id":2,"name":"John Doe","phone":12345678,"email":"john.doe@example.com","user_id":1,"created_at":"2013-09-30T15:55:02.627Z","updated_at":"2013-09-30T15:55:02.627Z"},{"id":1,"name":"Jane Doe","phone":98765432,"email":"jane.doe@example.com","user_id":1,"created_at":"2013-09-30T15:54:45.339Z","updated_at":"2013-09-30T15:54:45.339Z"}
 
 Credits
 -------
 
 The [OpenResty buildpack](https://github.com/leafo/heroku-openresty) did the hard Heroku work! Thanks!
 
-Our thanks to Taylor Brown [Taytay](http://taytay.com/) for providing the base configuration and files. 
+Our thanks to Taylor Brown [Taytay](http://taytay.com/) for providing the base implementation, configuration and files. 
 
 I'm Maria Pilar Guerra-Arias (aka Pili) an API Solution Engineer at [3scale](http://www.3scale.net)
