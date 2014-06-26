@@ -15,7 +15,7 @@ There were a couple of ideas behind this API Gateway implementation:
 2. To allow the access_tokens to be linked to a particular user so that we can be sure that they are only used to access data that was granted access to.
 3. To make the API Gateway the access token store to keep full control over the access tokens issued - NOT YET IMPLEMENTED
 
-As such there are a few changes to the Nginx OAuth configuration files downloaded from 3scale in order to make this possible.
+As such you will see that there are a few differences between the Nginx OAuth configuration files downloaded from 3scale and the ones available from this repository in order to implement these. 
 
 #### 1. API Gateway as an OAuth2 provider running on Heroku ####
 
@@ -23,9 +23,9 @@ The 3scale Nginx OAuth2 extension requires redis to be installed on the nginx se
 
 Installing the RedisToGo addon to your Heroku instance will set up an environment variable (REDISTOGO_URL) which holds the connection string in this format:
 
-redis://redistogo:<USER_ID>@<HOSTNAME>:<PORT>/
+```redis://redistogo:<USER_ID>@<HOSTNAME>:<PORT>/```
 
-In order to connect to redis to go, you need to extract the relevant data from this environment variable and use it to build your connection string:
+In order to connect to redis to go, we extract the relevant data from this environment variable and use it to build the connection string:
 
 ```lua
 function M.connect_redis(red)
@@ -52,7 +52,7 @@ function M.connect_redis(red)
 end
 ```
 
-And change the connection string to match, e.g
+We also need to change the connection string to match the changes made to the method, e.g
 
 ```lua
     local redis = require 'resty.redis'
@@ -68,7 +68,24 @@ In order to ensure that an access token is only valid for a the user that grante
 
 As such, if you compare the files in this repository with the lua files downloaded from 3scale, you will see the following changes
 
-1. In authorized_callback.lua, the user_id is added to the client_data.client_id store
+1. In threescale_utils.lua, we add a new function to split a string on a char, this is already present in the nginx.lua file, so we can just copy it from there
+
+```lua
+function string:split(delimiter)
+  local result = { }
+  local from = 1
+  local delim_from, delim_to = string.find( self, delimiter, from )
+  while delim_from do
+    table.insert( result, string.sub( self, from , delim_from-1 ) )
+    from = delim_to + 1
+    delim_from, delim_to = string.find( self, delimiter, from )
+  end
+  table.insert( result, string.sub( self, from ) )
+  return result
+end
+```
+
+2. In authorized_callback.lua, the user_id is added to the client_data.client_id store
 
 ```lua
    ok, err =  red:hmset("c:".. client_data.client_id, {client_id = client_data.client_id,
@@ -78,13 +95,13 @@ As such, if you compare the files in this repository with the lua files download
                    code = code,
                    user_id = params.username })
 ```
-2. In get_token.lua, the user_id is added when storing the access token in the 3scale backend
+
+3. In get_token.lua, the user_id is added when storing the access token in the 3scale backend
 
 ```lua
 function generate_access_token_for(client_id)
    local ok, err = ts.connect_redis(red)
    ok, err =  red:hgetall("c:".. client_id) -- code?
-   ts.log(ok)
    if ok[1] == nil then
       ngx.say("expired_code")
       return ngx.exit(ngx.HTTP_OK)
@@ -103,8 +120,80 @@ And then removed again when returning it to the application
   ngx.say({'{"access_token": "'.. access_token .. '", "token_type": "bearer"}'})
 ```
 
-As an additional security measure, in my API backend, I am rejecting any calls that don't come from my API gateway by setting up a shared secret between the 2, such that any calls that don't include this secret, will be rejected. 
+When checking for access_token validity for a particular user (in my particular example) we extract the userid from the call to the API and concatenate it with the access_token sent:
 
+```lua
+function oauth(params, service)
+  local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
+    params.access_token ..":".. params.username..
+    "&user_id="..
+    params.access_token,
+    { share_all_vars = true })
+```
+
+As an additional security measure, in my API backend, I am rejecting any calls that don't come from my API gateway by setting up a shared secret between the 2, such that any calls that don't include this secret, will be rejected.
+
+In nginx.sample.conf I add the PROXY_SECRET_TOKEN environment variable which bill be sent as a header to the API backend
+
+```
+    location ~* /api/(.*)/contacts.json {
+      set $provider_key null;
+      set $cached_key null;
+      set $credentials null;
+      set $usage null;
+      set $service_id 2555417686521;
+      set $proxy_pass null;
+      set $secret_token "${{PROXY_SECRET_TOKEN}}";
+
+      set $api_path "/api/contacts.json?$args&username=$1";
+
+      proxy_ignore_client_abort on;
+
+      ## CHANGE THE PATH TO POINT TO THE RIGHT FILE ON YOUR FILESYSTEM
+      access_by_lua_file nginx.lua;
+
+      proxy_pass $proxy_pass$api_path ;
+      proxy_set_header  X-Real-IP  $remote_addr;
+      proxy_set_header  Host  address-book-app.herokuapp.com;
+      proxy_set_header X-3scale-proxy-secret-token $secret_token;
+    }
+``` 
+
+We can then check for this header in our API backend to ensure the call is coming from the API Gateway and reject any calls with an incorrect secret token. 
+
+```ruby
+module Api
+  class ContactsController < ApplicationController
+    before_filter :restrict_access
+    respond_to :html, :json
+
+    # GET /contacts(.:format)
+    def index
+      @user = User.find_by username: params[:username]
+      respond_to do |format|
+        format.json do
+          render :json => @user.contacts.to_json
+        end
+      end
+    end
+
+      protected
+    def restrict_access
+      secret_token = request.headers['X-3scale-proxy-secret-token']
+      if secret_token != ENV['SHARED_PROXY_SECRET']
+        respond_to do |format|
+          format.html
+          format.json { render :json => { :outcome => 'Access Denied'} }
+        end
+        return false
+      end
+    end
+
+  end
+end
+```
+
+There are of course many additional measures you can take such as IP address/domain whitelisting but this is just a simple example of what is possible.
 
 Usage
 ---------
