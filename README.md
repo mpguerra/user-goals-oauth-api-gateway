@@ -4,7 +4,7 @@ This is based on Taytay's excellent implementation of a 3scale API Proxy using H
 
 Please check out his [repo](https://www.github.com/Taytay/api-proxy-3scale-heroku) for the README and basic instructions on setting this up. 
 
-I have added some OAuth extensions on top of this to implement an API Gateway acting as an OAuth2 provider for a simple Address Book App API. I will outline how these work (as well as any additional set up steps where they differ from the original repo) using the [Address Book App API](https://www.github.com/mpguerra/address-book-app-api) as an example API. 
+I have added some OAuth extensions on top of this to implement an API Gateway acting as an OAuth2 provider for a simple Address Book App API. I will outline how these work (as well as any additional set up steps where they differ from the original repo) using the [Address Book App API](https://www.github.com/mpguerra/address-book-app) as an example API. 
 
 Motivation
 --------
@@ -23,7 +23,7 @@ The 3scale Nginx OAuth2 extension requires redis to be installed on the nginx se
 
 Installing the RedisToGo addon to your Heroku instance will set up an environment variable (REDISTOGO_URL) which holds the connection string in this format:
 
-```redis://redistogo:<USER_ID>@<HOSTNAME>:<PORT>/```
+`redis://redistogo:\<USER_ID\>@\<HOSTNAME\>:\<PORT\>/`
 
 In order to connect to redis to go, we extract the relevant data from this environment variable and use it to build the connection string:
 
@@ -64,12 +64,13 @@ We also need to change the connection string to match the changes made to the me
 
 #### 2. Ensuring access token is only valid for user that granted access ####
 
-In order to ensure that an access token is only valid for a the user that granted access, we need some way of linking the user identity to an access_token. I have chosen to do this by storing the user_id with the access_token as such: <access_token>:<user_id> Please note that the maximum length for the access_token field is 256 chars so you need to make sure that the combination of these 2 values will not exceed that length.
+In order to ensure that an access token is only valid for a the user that granted access, we need some way of linking the user identity to an access_token. I have chosen to do this by storing the user_id with the access_token as such: \<access_token\>:\<user_id\> 
 
-As such, if you compare the files in this repository with the lua files downloaded from 3scale, you will see the following changes
+_NB: the maximum length for the access_token field is 256 chars so you need to make sure that the combination of these 2 values will not exceed that length._
+
+As such, if you compare the files in this repository with the lua files downloaded from 3scale, you will see the following changes:
 
 1. In threescale_utils.lua, we add a new function to split a string on a char, this is already present in the nginx.lua file, so we can just copy it from there
-
 ```lua
 function string:split(delimiter)
   local result = { }
@@ -84,9 +85,7 @@ function string:split(delimiter)
   return result
 end
 ```
-
 2. In authorized_callback.lua, the user_id is added to the client_data.client_id store
-
 ```lua
    ok, err =  red:hmset("c:".. client_data.client_id, {client_id = client_data.client_id,
                    client_secret = client_data.secret_id,
@@ -95,9 +94,7 @@ end
                    code = code,
                    user_id = params.username })
 ```
-
 3. In get_token.lua, the user_id is added when storing the access token in the 3scale backend
-
 ```lua
 function generate_access_token_for(client_id)
    local ok, err = ts.connect_redis(red)
@@ -110,18 +107,14 @@ function generate_access_token_for(client_id)
    end
 end
 ```
-
 And then removed again when returning it to the application
-
 ```lua
   access_token = token:split(":")[1]
 
   ngx.header.content_type = "application/json; charset=utf-8"
   ngx.say({'{"access_token": "'.. access_token .. '", "token_type": "bearer"}'})
 ```
-
-When checking for access_token validity for a particular user (in my particular example) we extract the userid from the call to the API and concatenate it with the access_token sent:
-
+4. In nginx.lua, when checking for access_token validity for a particular user (in my particular example) we extract the userid from the call to the API and concatenate it with the access_token sent:
 ```lua
 function oauth(params, service)
   local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
@@ -131,9 +124,10 @@ function oauth(params, service)
     { share_all_vars = true })
 ```
 
-As an additional security measure, in my API backend, I am rejecting any calls that don't come from my API gateway by setting up a shared secret between the 2, such that any calls that don't include this secret, will be rejected.
 
-In nginx.sample.conf I add the PROXY_SECRET_TOKEN environment variable which bill be sent as a header to the API backend
+As an additional security measure, in my API backend, I am rejecting any calls that don't come from my API gateway by setting up a shared secret between the two, such that any calls that don't include this secret, will be rejected.
+
+In nginx.sample.conf we add the PROXY_SECRET_TOKEN environment variable which will be sent as a header to the API backend
 
 ```
     location ~* /api/(.*)/contacts.json {
@@ -230,12 +224,12 @@ See the sample **nginx.sample.conf** file for details, and for notes on other op
 
 #### Step 6: Test the workflow ####
 
-Once your Proxy is deployed, you can test it's working as expected. However, before you test the OAuth workflow, you will need to make sure that your User Authorization Server will call the /callback endpoint on your proxy once a user grants access, e.g http://<heroku-app-name>.herokuapp.com/callback. 
+Once your Proxy is deployed, you can test it's working as expected. However, before you test the OAuth workflow, you will need to make sure that your User Authorization Server will call the /callback endpoint on your proxy once a user grants access, e.g http://\<heroku-app-name\>.herokuapp.com/callback. 
 
 When that's done, you can test your API proxy OAuth2 workflow using the google oauth playground (https://developers.google.com/oauthplayground/) or runscope's OAuth 2 Token Generator (https://www.runscope.com/oauth2_tool) with the oauth credentials (client_id and client_secret) you get from your 3scale control panel, making sure that the redirect url defined in 3scale matches that of the service you are using to test out your OAuth2 workflow (e.g https://www.runscope.com/oauth_tool/callback for Runscope and https://developers.google.com/oauthplayground/ for Google)
 
-The Authorize URL/Authorization endpoint will be: http://<heroku-app-name>.herokuapp.com/authorize
-The Access Token URL/Token endpoint will be: http://<heroku-app-name>.herokuapp.com/oauth/token
+The Authorize URL/Authorization endpoint will be: http://\<heroku-app-name\>.herokuapp.com/authorize
+The Access Token URL/Token endpoint will be: http://\<heroku-app-name\>.herokuapp.com/oauth/token
 
 This will go through the whole process of requesting an authorization code for a user and exchanging that for an access token which can then be used to access data for that user using the API.
 
