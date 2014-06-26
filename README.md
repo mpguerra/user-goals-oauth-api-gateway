@@ -12,7 +12,7 @@ Motivation
 There were a couple of ideas behind this API Gateway implementation: 
 
 1. To have an API Gateway that acts as an OAuth2 provider running on Heroku
-2. To allow the access_tokens to be linked to a particular user so that we can be sure that they are only used to access data that was granted access to.
+2. To show an example of how you might use Nginx to match access_tokens to a particular end user so it will only allow calls through that are targetting that end user with that access token.
 3. To make the API Gateway the access token store to keep full control over the access tokens issued - NOT YET IMPLEMENTED
 
 As such you will see that there are a few differences between the Nginx OAuth configuration files downloaded from 3scale and the ones available from this repository in order to implement these. 
@@ -23,9 +23,9 @@ The 3scale Nginx OAuth2 extension requires redis to be installed on the nginx se
 
 Installing the RedisToGo addon to your Heroku instance will set up an environment variable (REDISTOGO_URL) which holds the connection string in this format:
 
-`redis://redistogo:\<USER_ID\>@\<HOSTNAME\>:\<PORT\>/`
+`redis://redistogo:<USER_ID>@<HOSTNAME>:<PORT>/`
 
-In order to connect to redis to go, we extract the relevant data from this environment variable and use it to build the connection string:
+In order to connect to redis to go, we extract the relevant data from this environment variable and use it to build the connection string, this will require some changes to the connect\_redis function in threescale\_utils.lua :
 
 ```lua
 function M.connect_redis(red)
@@ -52,7 +52,7 @@ function M.connect_redis(red)
 end
 ```
 
-We also need to change the connection string to match the changes made to the method, e.g
+We also need to change the way we call the connect\_redis function from the other \*.lua files, e.g
 
 ```lua
     local redis = require 'resty.redis'
@@ -64,9 +64,9 @@ We also need to change the connection string to match the changes made to the me
 
 #### 2. Ensuring access token is only valid for user that granted access ####
 
-In order to ensure that an access token is only valid for a the user that granted access, we need some way of linking the user identity to an access_token. I have chosen to do this by storing the user_id with the access_token as such: \<access_token\>:\<user_id\> 
+In order to ensure that an access token is only valid for a the user that granted access, we need some way of linking the user identity to an access\_token. I have chosen to do this by storing the user\_id with the access\_token as such: \<access\_token\>\:\<user\_id\> 
 
-_NB: the maximum length for the access_token field is 256 chars so you need to make sure that the combination of these 2 values will not exceed that length._
+_NB: the maximum length for the access\_token field is 256 chars so you need to make sure that the combination of these 2 values will not exceed that length._
 
 As such, if you compare the files in this repository with the lua files downloaded from 3scale, you will see the following changes:
 
@@ -127,7 +127,7 @@ function oauth(params, service)
 
 As an additional security measure, in my API backend, I am rejecting any calls that don't come from my API gateway by setting up a shared secret between the two, such that any calls that don't include this secret, will be rejected.
 
-In nginx.sample.conf we add the PROXY_SECRET_TOKEN environment variable which will be sent as a header to the API backend
+In nginx.sample.conf we add the PROXY\_SECRET\_TOKEN environment variable which will be sent as a header to the API backend
 
 ```
     location ~* /api/(.*)/contacts.json {
@@ -214,11 +214,11 @@ Make the following mandatory modifications to the nginx.conf file:
 1. Add this line to the top of the file
     daemon off;
 2. Add this line to make the REDISTOGO_URL environment variable available to the .lua files
-    env REDISTOGO_URL;    
+    env REDISTOGO\_URL;    
 3. replace 'listen 80;' with:
     listen ${{PORT}};
-4. replace 'access_by_lua_file lua_tmp.lua;' with:
-    access_by_lua_file nginx.lua;
+4. replace 'access_by_lua_file lua\_tmp.lua;' with:
+    access\_by\_lua_file nginx.lua;
 
 See the sample **nginx.sample.conf** file for details, and for notes on other optional changes you can make.
 
@@ -238,7 +238,7 @@ Now that you have an access token, you can call your API through the gateway as 
   `$ curl http://<heroku-app-name>.herokuapp.com/api/<username>/contacts.json?access_token=YOUR_ACCESS_TOKEN`
 
 ```json
-  {"id":2,"name":"John Doe","phone":12345678,"email":"john.doe@example.com","user_id":1,"created_at":"2013-09-30T15:55:02.627Z","updated_at":"2013-09-30T15:55:02.627Z"},{"id":1,"name":"Jane Doe","phone":98765432,"email":"jane.doe@example.com","user_id":1,"created_at":"2013-09-30T15:54:45.339Z","updated_at":"2013-09-30T15:54:45.339Z"}
+[{"id":2,"name":"John Doe","phone":12345678,"email":"john.doe@example.com","user_id":1,"created_at":"2013-09-30T15:55:02.627Z","updated_at":"2013-09-30T15:55:02.627Z"},{"id":1,"name":"Jane Doe","phone":98765432,"email":"jane.doe@example.com","user_id":1,"created_at":"2013-09-30T15:54:45.339Z","updated_at":"2013-09-30T15:54:45.339Z"}]
 ```
 
 Credits
