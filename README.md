@@ -238,7 +238,26 @@ Now that you have an access token, you can call your API through the gateway as 
   `$ curl http://<heroku-app-name>.herokuapp.com/api/<username>/contacts.json?access_token=YOUR_ACCESS_TOKEN`
 
 ```json
-[{"id":2,"name":"John Doe","phone":12345678,"email":"john.doe@example.com","user_id":1,"created_at":"2013-09-30T15:55:02.627Z","updated_at":"2013-09-30T15:55:02.627Z"},{"id":1,"name":"Jane Doe","phone":98765432,"email":"jane.doe@example.com","user_id":1,"created_at":"2013-09-30T15:54:45.339Z","updated_at":"2013-09-30T15:54:45.339Z"}]
+[
+  {
+    "id": 2,
+    "name": "JohnDoe",
+    "phone": 12345678,
+    "email": "john.doe@example.com",
+    "user_id": 1,
+    "created_at": "2013-09-30T15:55:02.627Z",
+    "updated_at": "2013-09-30T15:55:02.627Z"
+  },
+  {
+    "id": 1,
+    "name": "Jane Doe",
+    "phone": 98765432,
+    "email": "jane.doe@example.com",
+    "user_id": 1,
+    "created_at": "2013-09-30T15:54:45.339Z",
+    "updated_at": "2013-09-30T15:54:45.339Z"
+  }
+]
 ```
 
 Credits
