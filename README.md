@@ -27,7 +27,7 @@ redis://redistogo:<USER_ID>@<HOSTNAME>:<PORT>/
 
 In order to connect to redis to go, you need to extract the relevant data from this environment variable and use it to build your connection string:
 
-```
+```lua
 function M.connect_redis(red)
   redisurl = os.getenv("REDISTOGO_URL")
   redisurl_connect = string.split(redisurl, ":")[3]
@@ -52,7 +52,59 @@ function M.connect_redis(red)
 end
 ```
 
+And change the connection string to match, e.g
+
+```lua
+    local redis = require 'resty.redis'
+    local ts = require 'threescale_utils'
+    local red = redis:new()
+   
+    local ok, err = ts.connect_redis(red)
+```
+
 #### 2. Ensuring access token is only valid for user that granted access ####
+
+In order to ensure that an access token is only valid for a the user that granted access, we need some way of linking the user identity to an access_token. I have chosen to do this by storing the user_id with the access_token as such: <access_token>:<user_id> Please note that the maximum length for the access_token field is 256 chars so you need to make sure that the combination of these 2 values will not exceed that length.
+
+As such, if you compare the files in this repository with the lua files downloaded from 3scale, you will see the following changes
+
+1. In authorized_callback.lua, the user_id is added to the client_data.client_id store
+
+```lua
+   ok, err =  red:hmset("c:".. client_data.client_id, {client_id = client_data.client_id,
+                   client_secret = client_data.secret_id,
+                   redirect_uri = client_data.redirect_uri,
+                   pre_access_token = client_data.pre_access_token,
+                   code = code,
+                   user_id = params.username })
+```
+2. In get_token.lua, the user_id is added when storing the access token in the 3scale backend
+
+```lua
+function generate_access_token_for(client_id)
+   local ok, err = ts.connect_redis(red)
+   ok, err =  red:hgetall("c:".. client_id) -- code?
+   ts.log(ok)
+   if ok[1] == nil then
+      ngx.say("expired_code")
+      return ngx.exit(ngx.HTTP_OK)
+   else
+      return red:array_to_hash(ok).pre_access_token..":"..red:array_to_hash(ok).user_id
+   end
+end
+```
+
+And then removed again when returning it to the application
+
+```lua
+  access_token = token:split(":")[1]
+
+  ngx.header.content_type = "application/json; charset=utf-8"
+  ngx.say({'{"access_token": "'.. access_token .. '", "token_type": "bearer"}'})
+```
+
+As an additional security measure, in my API backend, I am rejecting any calls that don't come from my API gateway by setting up a shared secret between the 2, such that any calls that don't include this secret, will be rejected. 
+
 
 Usage
 ---------
@@ -100,9 +152,11 @@ This will go through the whole process of requesting an authorization code for a
 
 Now that you have an access token, you can call your API through the gateway as usual by sending the access token issued previously:
 
-  $ curl http://<heroku-app-name>.herokuapp.com/api/<username>/contacts.json\?access_token\=YOUR_ACCESS_TOKEN
+  `$ curl http://<heroku-app-name>.herokuapp.com/api/<username>/contacts.json?access_token=YOUR_ACCESS_TOKEN`
 
+```json
   {"id":2,"name":"John Doe","phone":12345678,"email":"john.doe@example.com","user_id":1,"created_at":"2013-09-30T15:55:02.627Z","updated_at":"2013-09-30T15:55:02.627Z"},{"id":1,"name":"Jane Doe","phone":98765432,"email":"jane.doe@example.com","user_id":1,"created_at":"2013-09-30T15:54:45.339Z","updated_at":"2013-09-30T15:54:45.339Z"}
+```
 
 Credits
 -------
