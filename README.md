@@ -212,13 +212,14 @@ Personally I renamed mine to nginx.conf and nginx.lua, but you can call them any
 Make the following mandatory modifications to the nginx.conf file:
 
 1. Add this line to the top of the file
-    daemon off;
+    `daemon off;`
 2. Add this line to make the REDISTOGO_URL environment variable available to the .lua files
-    env REDISTOGO\_URL;    
-3. replace 'listen 80;' with:
-    listen ${{PORT}};
-4. replace 'access_by_lua_file lua\_tmp.lua;' with:
-    access\_by\_lua_file nginx.lua;
+    `env REDISTOGO_URL;`    
+3. replace `listen 80;` with:
+    `listen ${{PORT}};`
+4. replace `access_by_lua_file lua_tmp.lua;` with:
+    `access_by_lua_file nginx.lua;`
+Or the name of your nginx.lua file. 
 
 See the sample **nginx.sample.conf** file for details, and for notes on other optional changes you can make.
 
