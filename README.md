@@ -225,7 +225,7 @@ See the sample **nginx.sample.conf** file for details, and for notes on other op
 
 #### Step 6: Test the workflow ####
 
-Once your Proxy is deployed, you can test it's working as expected. However, before you test the OAuth workflow, you will need to make sure that your User Authorization Server will call the /callback endpoint on your proxy once a user grants access, e.g `http://<heroku-app-name>.herokuapp.com/callback`. 
+Once your Proxy is deployed, you can test it's working as expected. However, before you test the OAuth workflow, you will need to make sure that your User Authorization Server will call the `/callback` endpoint on your proxy once a user grants access, e.g `http://<heroku-app-name>.herokuapp.com/callback`. 
 
 When that's done, you can test your API proxy OAuth2 workflow using the google oauth playground (https://developers.google.com/oauthplayground/) or runscope's OAuth 2 Token Generator (https://www.runscope.com/oauth2\_tool) with the oauth credentials (client\_id and client\_secret) you get from your 3scale control panel, making sure that the redirect url defined in 3scale matches that of the service you are using to test out your OAuth2 workflow (e.g https://www.runscope.com/oauth_tool/callback for Runscope and https://developers.google.com/oauthplayground/ for Google)
 
@@ -242,7 +242,7 @@ Now that you have an access token, you can call your API through the gateway as 
 [
   {
     "id": 2,
-    "name": "JohnDoe",
+    "name": "John Doe",
     "phone": 12345678,
     "email": "john.doe@example.com",
     "user_id": 1,
