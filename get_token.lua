@@ -62,5 +62,4 @@ function get_token()
 end
 
 local params = {}
-
 local s = get_token()
