@@ -4,24 +4,25 @@ local ts = require 'threescale_utils'
 local red = redis:new()
 
 function generate_token(client_id)
-   return ts.sha1_digest(ngx.time() .. client_id)
+ return ts.sha1_digest(ngx.time() .. client_id)
 end
 
 -- Returns the access token (stored in redis) for the client identified by the id
 -- This needs to be called within a minute of it being stored, as it expires and is deleted
 function generate_access_token_for(client_id)
-   local ok, err = ts.connect_redis(red)
+ local ok, err = ts.connect_redis(red)
    ok, err =  red:hgetall("c:".. client_id) -- code?
    if ok[1] == nil then
-      ngx.say("expired_code")
-      return ngx.exit(ngx.HTTP_OK)
-   else
+    ngx.say("expired_code")
+    return ngx.exit(ngx.HTTP_OK)
+  else
     local client_data = red:array_to_hash(ok)
     if params.code == client_data.code then
       return client_data.pre_access_token..":"..red:array_to_hash(ok).user_id
     else
       return ngx.exit(ngx.HTTP_FORBIDDEN)
-   end
+    end
+  end
 end
 
 local function store_token(client_id, token)
@@ -43,22 +44,22 @@ local function store_token(client_id, token)
 end
 
 function get_token()
-   if "GET" == ngx.req.get_method() then
-      params = ngx.req.get_uri_args()
-   else
-      ngx.req.read_body()
-      params = ngx.req.get_post_args()
-   end
+ if "GET" == ngx.req.get_method() then
+  params = ngx.req.get_uri_args()
+else
+  ngx.req.read_body()
+  params = ngx.req.get_post_args()
+end
 
-   local required_params = {'client_id', 'redirect_uri', 'client_secret', 'code', 'grant_type'}
+local required_params = {'client_id', 'redirect_uri', 'client_secret', 'code', 'grant_type'}
 
-   if ts.required_params_present(required_params, params) and params['grant_type'] == 'authorization_code'  then
-      local token = generate_access_token_for(params.client_id)
-      store_token(params.client_id, token)
-   else
-      ngx.log(0, "NOPE")
-      ngx.exit(ngx.HTTP_FORBIDDEN)
-   end
+if ts.required_params_present(required_params, params) and params['grant_type'] == 'authorization_code'  then
+  local token = generate_access_token_for(params.client_id)
+  store_token(params.client_id, token)
+else
+  ngx.log(0, "NOPE")
+  ngx.exit(ngx.HTTP_FORBIDDEN)
+end
 end
 
 local params = {}
