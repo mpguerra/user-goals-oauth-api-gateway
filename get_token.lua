@@ -12,12 +12,15 @@ end
 function generate_access_token_for(client_id)
    local ok, err = ts.connect_redis(red)
    ok, err =  red:hgetall("c:".. client_id) -- code?
-   ts.log(ok)
    if ok[1] == nil then
       ngx.say("expired_code")
       return ngx.exit(ngx.HTTP_OK)
    else
-      return red:array_to_hash(ok).pre_access_token..":"..red:array_to_hash(ok).user_id
+    local client_data = red:array_to_hash(ok)
+    if params.code == client_data.code
+      return client_data.pre_access_token..":"..red:array_to_hash(ok).user_id
+    else
+      ngx.exit(ngx.HTTP_FORBIDDEN)
    end
 end
 
@@ -40,8 +43,6 @@ local function store_token(client_id, token)
 end
 
 function get_token()
-
-   local params = {}
    if "GET" == ngx.req.get_method() then
       params = ngx.req.get_uri_args()
    else
@@ -59,5 +60,7 @@ function get_token()
       ngx.exit(ngx.HTTP_FORBIDDEN)
    end
 end
+
+local params = {}
 
 local s = get_token()
