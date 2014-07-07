@@ -20,7 +20,7 @@ function generate_access_token_for(client_id)
     if params.code == client_data.code then
       return client_data.pre_access_token..":"..red:array_to_hash(ok).user_id
     else
-      ngx.exit(ngx.HTTP_FORBIDDEN)
+      return ngx.exit(ngx.HTTP_FORBIDDEN)
    end
 end
 
