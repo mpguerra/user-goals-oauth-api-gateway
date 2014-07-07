@@ -20,6 +20,8 @@ function generate_access_token_for(client_id)
     if params.code == client_data.code then
       return client_data.pre_access_token..":"..red:array_to_hash(ok).user_id
     else
+      ngx.header.content_type = "application/json; charset=utf-8"
+      ngx.say({'{"error": "invalid authorization code"}'})
       return ngx.exit(ngx.HTTP_FORBIDDEN)
     end
   end
