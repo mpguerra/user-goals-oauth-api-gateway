@@ -256,29 +256,31 @@ function authorize(auth_strat, params, service)
 end
 
 function oauth(params, service)
-  local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
-    params.access_token ..":".. params.username..
-    "&user_id="..
-    params.access_token,
-    { share_all_vars = true })
-  
+
   if ngx.var.usage ~= nil  then
     ngx.var.usage = add_trans(ngx.var.usage)
   end
 
-  if res.status == 200 then
-    local res2 = ngx.location.capture("/_threescale/oauth_report?access_token="..
-      params.access_token, 
-      {method = ngx.HTTP_POST, share_all_vars = true})
+  ngx.var.cached_key = ngx.var.cached_key .. ":" .. ngx.var.usage
+  local access_tokens = ngx.shared.api_keys
+  local is_known = access_tokens:get(ngx.var.cached_key)
 
-    if res2.status ~= 202 then
-      ngx.header.content_type = "application/json; charset=utf-8"
-      ngx.print('{"error": "not authenticated in 3scale end"}')
-      ngx.exit(ngx.HTTP_OK)
+  if is_known ~= 200 then
+  	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
+      params.access_token ..":".. params.username..
+      "&user_id="..
+      params.username,
+      { share_all_vars = true })
+
+    if res.status ~= 200   then
+      --access_tokens:delete(ngx.var.cached_key) -- Is this necesary?
+      ngx.status = res.status
+      ngx.header.content_type = "application/json"
+      error_authorization_failed(service)
+    else
+      access_tokens:set(ngx.var.cached_key,200)
     end
-  else
-    ngx.print('{"error": "not authenticated in 3scale authorize returned'.. res.status .. ' "}')
-    ngx.exit(ngx.HTTP_OK)
+    ngx.var.cached_key = nil
   end
 end
 
@@ -322,8 +324,9 @@ if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
   service = service_2555417686521 --
   params.access_token = parameters.access_token
+  ngx.var.access_token = parameters.access_token
   get_credentials_access_token(params , service_2555417686521)
-  -- ngx.var.cached_key = "2555417686521" .. ":" .. params.access_token  -- no cache yet
+  ngx.var.cached_key = "2555417686521" .. ":" .. params.access_token
   auth_strat = "oauth"
   ngx.var.service_id = "2555417686521"
   ngx.var.proxy_pass = "https://backend_address-book-app.herokuapp.com"
@@ -342,7 +345,6 @@ if get_debug_value() then
   ngx.header["X-3scale-matched-rules"] = matched_rules2
   ngx.header["X-3scale-credentials"]   = ngx.var.credentials
   ngx.header["X-3scale-usage"]         = ngx.var.usage
-  ngx.header["X-3scale-hostname"]      = ngx.var.hostname
 end
 
 authorize(auth_strat, params, service)

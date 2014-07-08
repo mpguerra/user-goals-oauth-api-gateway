@@ -18,7 +18,7 @@ function generate_access_token_for(client_id)
   else
     local client_data = red:array_to_hash(ok)
     if params.code == client_data.code then
-      return client_data.pre_access_token..":"..red:array_to_hash(ok).user_id
+      return client_data.pre_access_token..":"..client_data.user_id
     else
       ngx.header.content_type = "application/json; charset=utf-8"
       ngx.say({'{"error": "invalid authorization code"}'})
