@@ -327,13 +327,13 @@ if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
   service = service_2555417686521 --
   params.access_token = parameters.access_token
-  ngx.var.access_token = parameters.access_token..":"..params.username
   get_credentials_access_token(params , service_2555417686521)
   ngx.var.cached_key = "2555417686521" .. ":" .. ngx.var.access_token
   auth_strat = "oauth"
   ngx.var.service_id = "2555417686521"
   ngx.var.proxy_pass = "https://backend_address-book-app.herokuapp.com"
   ngx.var.usage = extract_usage_2555417686521(params, ngx.var.request)
+  ngx.var.access_token = parameters.access_token..":"..params.username
 end
 
 ngx.var.credentials = build_query(params)
