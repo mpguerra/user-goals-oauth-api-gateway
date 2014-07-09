@@ -32,7 +32,8 @@ local function store_token(client_id, token)
     {method = ngx.HTTP_POST,
     body = "provider_key=" ..ngx.var.provider_key ..
     "&app_id=".. client_id ..
-    "&token=".. token})
+    "&token=".. token ..
+    "&ttl=600"})
   if stored.status ~= 200 then
     ngx.say("eeeerror")
     ngx.exit(ngx.HTTP_OK)
