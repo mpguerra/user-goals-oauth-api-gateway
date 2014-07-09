@@ -272,7 +272,6 @@ function oauth(params, service)
       "&user_id="..
       params.username,
       { share_all_vars = true })
-    log(res)
     if res.status ~= 200   then
       --access_tokens:delete(ngx.var.cached_key) -- Is this necesary?
       ngx.status = res.status
