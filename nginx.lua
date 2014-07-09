@@ -265,8 +265,8 @@ function oauth(params, service)
   local access_tokens = ngx.shared.api_keys
   local is_known = access_tokens:get(ngx.var.cached_key)
 
-  ngx.log(0, "is_known = " .. is_known)
   if is_known ~= 200 then
+    ngx.log(0, "new key identified")
   	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
       params.access_token ..":".. params.username..
       "&user_id="..
@@ -283,6 +283,8 @@ function oauth(params, service)
       ngx.log(0, "setting access token in cache")
     end
     ngx.var.cached_key = nil
+  else
+    ngx.log(0, "key is in cache")
   end
 end
 
@@ -349,6 +351,7 @@ if get_debug_value() then
   ngx.header["X-3scale-usage"]         = ngx.var.usage
 end
 
+ngx.log(0, "calling authorize with access token = ".. ngx.var.access_token)
 authorize(auth_strat, params, service)
 
 -- END OF SCRIPT
