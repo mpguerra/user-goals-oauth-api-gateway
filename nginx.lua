@@ -265,13 +265,14 @@ function oauth(params, service)
   local access_tokens = ngx.shared.api_keys
   local is_known = access_tokens:get(ngx.var.cached_key)
 
+  ngx.log(0, "is_known = " .. is_known)
   if is_known ~= 200 then
   	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
       params.access_token ..":".. params.username..
       "&user_id="..
       params.username,
       { share_all_vars = true })
-
+    log(res)
     if res.status ~= 200   then
       --access_tokens:delete(ngx.var.cached_key) -- Is this necesary?
       ngx.status = res.status
@@ -279,6 +280,7 @@ function oauth(params, service)
       error_authorization_failed(service)
     else
       access_tokens:set(ngx.var.cached_key,200)
+      ngx.log(0, "setting access token in cache")
     end
     ngx.var.cached_key = nil
   end
