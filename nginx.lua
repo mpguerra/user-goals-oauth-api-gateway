@@ -268,7 +268,7 @@ function oauth(params, service)
   if is_known ~= 200 then
     ngx.log(0, "new key identified")
   	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
-      params.access_token ..":".. params.username..
+      ngx.var.access_token
       "&user_id="..
       params.username,
       { share_all_vars = true })
@@ -327,9 +327,9 @@ if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
   service = service_2555417686521 --
   params.access_token = parameters.access_token
-  ngx.var.access_token = parameters.access_token
+  ngx.var.access_token = parameters.access_token..":"..params.username
   get_credentials_access_token(params , service_2555417686521)
-  ngx.var.cached_key = "2555417686521" .. ":" .. params.access_token
+  ngx.var.cached_key = "2555417686521" .. ":" .. ngx.var.access_token
   auth_strat = "oauth"
   ngx.var.service_id = "2555417686521"
   ngx.var.proxy_pass = "https://backend_address-book-app.herokuapp.com"
