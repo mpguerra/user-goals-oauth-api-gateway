@@ -267,10 +267,8 @@ function oauth(params, service)
 
   if is_known ~= 200 then
     ngx.log(0, "new key identified")
-  	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
-      ngx.var.access_token
-      "&user_id="..
-      params.username,
+  	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..ngx.var.access_token..
+      "&user_id="..params.username,
       { share_all_vars = true })
     if res.status ~= 200   then
       --access_tokens:delete(ngx.var.cached_key) -- Is this necesary?
