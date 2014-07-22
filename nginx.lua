@@ -266,23 +266,18 @@ function oauth(params, service)
   local is_known = access_tokens:get(ngx.var.cached_key)
 
   if is_known ~= 200 then
-    ngx.log(0, "new key identified")
   	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..ngx.var.access_token..
       "&user_id="..params.username,
       { share_all_vars = true })
     if res.status ~= 200   then
-      ngx.log(0, "not authorized")
       access_tokens:delete(ngx.var.cached_key)
       ngx.status = res.status
       ngx.header.content_type = "application/json"
       error_authorization_failed(service)
     else
       access_tokens:set(ngx.var.cached_key,200)
-      ngx.log(0, "setting access token in cache")
     end
     ngx.var.cached_key = nil
-  else
-    ngx.log(0, "key is in cache go straight to out of band report")
   end
 end
 
@@ -349,7 +344,6 @@ if get_debug_value() then
   ngx.header["X-3scale-usage"]         = ngx.var.usage
 end
 
-ngx.log(0, "calling authorize with access token = ".. ngx.var.access_token)
 authorize(auth_strat, params, service)
 
 -- END OF SCRIPT
