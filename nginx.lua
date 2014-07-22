@@ -271,6 +271,7 @@ function oauth(params, service)
       "&user_id="..params.username,
       { share_all_vars = true })
     if res.status ~= 200   then
+      ngx.log(0, "not authorized")
       access_tokens:delete(ngx.var.cached_key)
       ngx.status = res.status
       ngx.header.content_type = "application/json"
@@ -281,7 +282,7 @@ function oauth(params, service)
     end
     ngx.var.cached_key = nil
   else
-    ngx.log(0, "key is in cache")
+    ngx.log(0, "key is in cache go straight to out of band report")
   end
 end
 
