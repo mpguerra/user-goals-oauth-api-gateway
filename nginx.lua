@@ -2,7 +2,7 @@
 -- Version:
 -- Error Messages per service
 
-service_2555417686521 = {
+service = {
 error_auth_failed = 'Authentication failed',
 error_auth_missing = 'Authentication parameters missing',
 auth_failed_headers = 'text/plain; charset=us-ascii',
@@ -12,6 +12,7 @@ no_match_headers = 'text/plain; charset=us-ascii',
 no_match_status = 404,
 auth_failed_status = 403,
 auth_missing_status = 403,
+secret_token = 'Shared_secret_sent_from_proxy_to_API_backend'
 }
 
 -- Logging Helpers
@@ -19,11 +20,9 @@ function show_table(a)
   for k,v in pairs(a) do
     local msg = ""
     msg = msg.. k
-    
     if type(v) == "string" then
       msg = msg.. " => " .. v
     end
-    
     ngx.log(0,msg)
   end
 end
@@ -77,21 +76,17 @@ function string:split(delimiter)
   local result = { }
   local from = 1
   local delim_from, delim_to = string.find( self, delimiter, from )
-  
   while delim_from do
     table.insert( result, string.sub( self, from , delim_from-1 ) )
     from = delim_to + 1
     delim_from, delim_to = string.find( self, delimiter, from )
   end
-  
   table.insert( result, string.sub( self, from ) )
-  
   return result
 end
 
 function first_values(a)
   r = {}
-  
   for k,v in pairs(a) do
     if type(v) == "table" then
       r[k] = v[1]
@@ -99,7 +94,6 @@ function first_values(a)
       r[k] = v
     end
   end
-
   return r
 end
 
@@ -113,7 +107,6 @@ function build_querystring(query)
   for i,v in pairs(query) do
     qstr = qstr .. 'usage[' .. i .. ']' .. '=' .. v .. '&'
   end
-
   return string.sub(qstr, 0, #qstr-1)
 end
 
@@ -131,7 +124,6 @@ function build_query(query)
   for i,v in pairs(query) do
     qstr = qstr .. i .. '=' .. v .. '&'
   end
-  
   return string.sub(qstr, 0, #qstr-1)
 end
 
@@ -168,7 +160,7 @@ end
 
 matched_rules2 = ""
 
-function extract_usage_2555417686521(params, request)
+function extract_usage(request)
 
   local t = string.split(request," ")
   local method = t[1]
@@ -177,27 +169,27 @@ function extract_usage_2555417686521(params, request)
   local usage_t =  {}
   local m = ""
   local matched_rules = {}
+  local params = {}
 
   local args = get_auth_params(nil, method)
-             local m =  ngx.re.match(path,[=[^/api/([\w_\.-]+)/contacts\.json]=])
-  if (m and method == "GET") then
-     -- rule: /api/{username}/contacts.json --
-         params.username = m[1]
-         table.insert(matched_rules, "/api/{username}/contacts.json")
 
-         usage_t["get_contacts"] = set_or_inc(usage_t, "get_contacts", 1)
+  -- mapping rules go here, e.g
+  local m =  ngx.re.match(path,[=[^/]=])
+  if (m and method == "GET") then
+     -- rule: / --
+     table.insert(matched_rules, "/")
+
+     usage_t["hits"] = set_or_inc(usage_t, "hits", 1)
      found = true
   end
   
   -- if there was no match, usage is set to nil and it will respond a 404, this behavior can be changed
   if found then
     matched_rules2 = table.concat(matched_rules, ", ")
-    
     return build_querystring(usage_t)
   else
     return nil
   end
-
 end
 
 --[[
@@ -206,7 +198,6 @@ end
 
 function get_auth_params(where, method)
   local params = {}
-  
   if where == "headers" then
     params = ngx.req.get_headers()
   elseif method == "GET" then
@@ -226,8 +217,11 @@ function get_credentials_app_id_app_key(params, service)
 end
 
 function get_credentials_access_token(params, service)
-  if params["access_token"] == nil then -- TODO: check where the params come
-    error_no_credentials(service)
+  -- Do this to remove token type, e.g Bearer from token and decode access_token
+  if params["authorization"] == nil then -- TODO: check where the params come
+      error_no_credentials(service)
+  else
+    return string.split(params["authorization"], " ")[2]
   end
 end
 
@@ -256,7 +250,6 @@ function authorize(auth_strat, params, service)
 end
 
 function oauth(params, service)
-
   if ngx.var.usage ~= nil  then
     ngx.var.usage = add_trans(ngx.var.usage)
   end
@@ -266,9 +259,12 @@ function oauth(params, service)
   local is_known = access_tokens:get(ngx.var.cached_key)
 
   if is_known ~= 200 then
-  	local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..ngx.var.access_token..
-      "&user_id="..params.username,
+    local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
+      params.access_token ..
+      "&user_id="..
+      params.access_token,
       { share_all_vars = true })
+
     if res.status ~= 200   then
       access_tokens:delete(ngx.var.cached_key)
       ngx.status = res.status
@@ -318,18 +314,16 @@ local host = ngx.req.get_headers()["Host"]
 local auth_strat = ""
 local service = {}
 if ngx.var.service_id == '2555417686521' then
-  local parameters = get_auth_params("not_headers", string.split(ngx.var.request, " ")[1] )
-  service = service_2555417686521 --
+  local parameters = get_auth_params("headers", string.split(ngx.var.request, " ")[1] )
+  ngx.var.secret_token = service.secret_token
+  ngx.var.access_token = parameters.access_token
   params.access_token = parameters.access_token
-  get_credentials_access_token(params , service_2555417686521)
-  ngx.var.cached_key = "2555417686521" .. ":" .. ngx.var.access_token
+  get_credentials_access_token(params , service)
+  ngx.var.cached_key = params.access_token
   auth_strat = "oauth"
-  ngx.var.service_id = "2555417686521"
-  ngx.var.proxy_pass = "https://backend_address-book-app.herokuapp.com"
-  ngx.var.usage = extract_usage_2555417686521(params, ngx.var.request)
-  ngx.var.access_token = parameters.access_token..":"..params.username
+  ngx.var.proxy_pass = "https://backend_user-goals-api"
+  ngx.var.usage = extract_usage(ngx.var.request)
 end
-
 ngx.var.credentials = build_query(params)
 
 -- WHAT TO DO IF NO USAGE CAN BE DERIVED FROM THE REQUEST.

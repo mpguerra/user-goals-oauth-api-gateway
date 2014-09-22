@@ -40,7 +40,6 @@ function M.newline()
 end
 
 function M.log(content)
-  if enabled == true then
     if type(content) == "table" then
       M.log_message(M.show_table(content))
     else
@@ -48,7 +47,6 @@ function M.log(content)
     end
     M.newline()
   end
-end
 
 -- End Logging Helpers
 
