@@ -12,7 +12,7 @@ no_match_headers = 'text/plain; charset=us-ascii',
 no_match_status = 404,
 auth_failed_status = 403,
 auth_missing_status = 403,
-secret_token = 'Shared_secret_sent_from_proxy_to_API_backend'
+secret_token = 'TokenFromOauthGateway'
 }
 
 -- Logging Helpers
@@ -160,36 +160,36 @@ end
 
 matched_rules2 = ""
 
-function extract_usage(request)
+function extract_usage(params, request)
 
-  local t = string.split(request," ")
+   local t = string.split(request," ")
   local method = t[1]
   local path = t[2]
   local found = false
   local usage_t =  {}
   local m = ""
   local matched_rules = {}
-  local params = {}
 
   local args = get_auth_params(nil, method)
-
-  -- mapping rules go here, e.g
-  local m =  ngx.re.match(path,[=[^/]=])
+             local m =  ngx.re.match(path,[=[^/api/user/([\w_\.-]+).json]=])
   if (m and method == "GET") then
-     -- rule: / --
-     table.insert(matched_rules, "/")
+     -- rule: /api/user/{userid}.json --
+         params.userid = m[1]
+         table.insert(matched_rules, "/api/user/{userid}.json")
 
-     usage_t["hits"] = set_or_inc(usage_t, "hits", 1)
+         usage_t["hits"] = set_or_inc(usage_t, "hits", 1)
      found = true
   end
   
   -- if there was no match, usage is set to nil and it will respond a 404, this behavior can be changed
   if found then
     matched_rules2 = table.concat(matched_rules, ", ")
+    
     return build_querystring(usage_t)
   else
     return nil
   end
+
 end
 
 --[[
@@ -260,10 +260,12 @@ function oauth(params, service)
 
   if is_known ~= 200 then
     local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
-      params.access_token ..
+      ngx.var.access_token ..
       "&user_id="..
-      params.access_token,
+      params.userid,
       { share_all_vars = true })
+    ngx.log(0, res.body)
+    ngx.log(0, ngx.var.cached_key)
 
     if res.status ~= 200   then
       access_tokens:delete(ngx.var.cached_key)
@@ -312,18 +314,14 @@ end
 local params = {}
 local host = ngx.req.get_headers()["Host"]
 local auth_strat = ""
-local service = {}
-if ngx.var.service_id == '2555417686521' then
   local parameters = get_auth_params("headers", string.split(ngx.var.request, " ")[1] )
   ngx.var.secret_token = service.secret_token
-  ngx.var.access_token = parameters.access_token
-  params.access_token = parameters.access_token
-  get_credentials_access_token(params , service)
-  ngx.var.cached_key = params.access_token
+  params.access_token = get_credentials_access_token(parameters, service)
+  ngx.var.cached_key = ngx.var.access_token
   auth_strat = "oauth"
-  ngx.var.proxy_pass = "https://backend_user-goals-api"
-  ngx.var.usage = extract_usage(ngx.var.request)
-end
+  ngx.var.proxy_pass = "https://backend_user-goals-api.herokuapp.com"
+  ngx.var.usage = extract_usage(params, ngx.var.request)
+  ngx.var.access_token = params.access_token..":"..params.userid
 ngx.var.credentials = build_query(params)
 
 -- WHAT TO DO IF NO USAGE CAN BE DERIVED FROM THE REQUEST.

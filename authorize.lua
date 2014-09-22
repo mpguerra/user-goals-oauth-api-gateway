@@ -7,6 +7,7 @@ function check_return_url(client_id, return_url)
   local res = ngx.location.capture("/_threescale/redirect_uri_matches",
 				  { vars = { red_url = return_url ,
 				    	     client_id = client_id }})
+  ngx.log(0, res.body)
   return (res.status == 200)
 end
 
@@ -45,11 +46,10 @@ end
 function redirect_to_login(params)
    local n = nonce(params.client_id)
 
-   params.scope = params.scope
    ts.connect_redis(red)
    local pre_token = generate_access_token(params.client_id)
 
-   local ok, err = red:hmset(ngx.var.service_id .. "#tmp_data:".. n,
+   local ok, err = red:hmset("#tmp_data:".. n,
 			     {client_id = params.client_id,
 			      redirect_uri = params.redirect_uri,
 			      plan_id = params.scope,
@@ -61,7 +61,7 @@ function redirect_to_login(params)
 
    -- TODO: If the login_url has already the parameter state bad
    -- things are to happen
-   ngx.redirect(ngx.var.login_url .. "?&scope=".. params.scope .. "&state=" .. n .. "&tok=".. pre_token)
+   ngx.redirect(ngx.var.login_url .. "?&scope=".. params.scope .. "&state=" .. n .. "&tok=".. pre_token.."&client_id="..params.client_id)
    ngx.exit(ngx.HTTP_OK)
 end
 
