@@ -319,11 +319,11 @@ local auth_strat = ""
   local parameters = get_auth_params("headers", string.split(ngx.var.request, " ")[1] )
   ngx.var.secret_token = service.secret_token
   params.access_token = get_credentials_access_token(parameters, service)
-  ngx.var.cached_key = ngx.var.access_token
   auth_strat = "oauth"
   ngx.var.proxy_pass = "https://backend_user-goals-api.herokuapp.com"
   ngx.var.usage = extract_usage(params, ngx.var.request)
   ngx.var.access_token = params.access_token..":"..params.userid
+  ngx.var.cached_key = ngx.var.access_token
 ngx.var.credentials = build_query(params)
 
 -- WHAT TO DO IF NO USAGE CAN BE DERIVED FROM THE REQUEST.
