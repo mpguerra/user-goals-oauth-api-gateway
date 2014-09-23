@@ -255,6 +255,8 @@ function oauth(params, service)
   end
 
   ngx.var.cached_key = ngx.var.cached_key .. ":" .. ngx.var.usage
+  ngx.log(0,'ngx.var.cached_key='..ngx.var.cached_key)
+  ngx.log(0,'ngx.var.access_token='..ngx.var.access_token)
   local access_tokens = ngx.shared.api_keys
   local is_known = access_tokens:get(ngx.var.cached_key)
 
