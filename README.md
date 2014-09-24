@@ -7,7 +7,7 @@ Deploy
 ======
 
 1. Clone repo: ` git clone git@github.com:mpguerra/user-goals-oauth-api-gateway.git <NEW REPO NAME>`
-2. `heroku apps:create --buildpack http://github.com/leafo/heroku-buildpack-lua.git user-goals-oauth-api-gateway`
+2. `heroku apps:create --buildpack http://github.com/leafo/heroku-buildpack-lua.git <APP NAME>`
 3. `heroku addons:add redistogo`
 4. `heroku addons:add threescale`
 7. `git push heroku master`
