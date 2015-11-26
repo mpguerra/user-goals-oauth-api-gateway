@@ -20,11 +20,9 @@ function authorize(params)
    local required_params = {'client_id', 'redirect_uri', 'response_type', 'scope'}
 
    if ts.required_params_present(required_params, params) and
-      params["response_type"] == 'code' and
+      (params["response_type"] == 'code' or params["response_type"] == 'token') and
       check_return_url(params.client_id, params.redirect_uri) then
       redirect_to_login(params)
-   elseif params["response_type"] ~= 'code' then
-      return false, 'unsupported_response_type'
    else
       return false, 'invalid_request'
    end
@@ -46,14 +44,15 @@ end
 function redirect_to_login(params)
    local n = nonce(params.client_id)
 
-   ts.connect_redis(red)
-   local pre_token = generate_access_token(params.client_id)
+  params.scope = params.scope
+  ts.connect_redis(red)
+   local token = generate_access_token(params.client_id)
 
-   local ok, err = red:hmset("#tmp_data:".. n,
-			     {client_id = params.client_id,
-			      redirect_uri = params.redirect_uri,
+   local ok, err = red:hmset(ngx.var.service_id .. "#state:".. n,
+    {client_id = params.client_id,
+    redirect_uri = params.redirect_uri,
 			      plan_id = params.scope,
-			      pre_access_token = pre_token})
+			      access_token = token})
 
    if not ok then
       ts.error(ts.dump(err))
@@ -61,7 +60,7 @@ function redirect_to_login(params)
 
    -- TODO: If the login_url has already the parameter state bad
    -- things are to happen
-   ngx.redirect(ngx.var.login_url .. "?&scope=".. params.scope .. "&state=" .. n .. "&tok=".. pre_token.."&client_id="..params.client_id)
+   ngx.redirect(ngx.var.login_url .. "?scope=".. params.scope .. "&state=" .. n)
    ngx.exit(ngx.HTTP_OK)
 end
 
@@ -69,5 +68,5 @@ local params = ngx.req.get_uri_args()
 local _ok, a_err = authorize(params)
 
 if not a_ok then
-   ngx.redirect(ngx.var.login_url .. "?&scope=" .. params.scope .. "&state=" .. (params.state or '') .. "&error=" .. a_err)
+  ngx.redirect(ngx.var.login_url .. "?scope=" .. params.scope .. "&state=" .. (params.state or '') .. "&error=" .. a_err)
 end
