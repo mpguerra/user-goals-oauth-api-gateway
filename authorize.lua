@@ -19,9 +19,16 @@ function authorize(params)
    -- is the user trying to log to
    local required_params = {'client_id', 'redirect_uri', 'response_type', 'scope'}
 
-   if ts.required_params_present(required_params, params) and
-      (params["response_type"] == 'code' or params["response_type"] == 'token') and
-      check_return_url(params.client_id, params.redirect_uri) then
+   local check_return_url = check_return_url(params.client_id, params.redirect_uri)
+   ngx.log(0, "check_return_url ="..check_return_url)
+   local response_type_present = params["response_type"] == 'code' or params["response_type"] == 'token'
+   ngx.log(0, "response_type_present ="..response_type_present)
+   
+   local conditions_met = check_return_url and response_type_present and ts.required_params_present(required_params, params) 
+
+   ngx.log(0, "conditions_met="..conditions_met)
+   
+   if conditions_met then
       redirect_to_login(params)
    else
       return false, 'invalid_request'
