@@ -15,7 +15,7 @@ local params = ngx.req.get_uri_args()
 
 if ts.required_params_present({'state', 'response_type'}, params) then
    ts.connect_redis(red)
-   local tmp_data = ngx.var.service_id .. "#tmp_data:".. params.state
+   local tmp_data = ngx.var.service_id .. "#state:".. params.state
    ok , err = red:exists(tmp_data)
    if 0 == ok then
       -- TODO: Redirect? to the initial state?
