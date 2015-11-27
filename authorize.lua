@@ -19,22 +19,17 @@ function authorize(params)
    -- is the user trying to log to
    local required_params = {'client_id', 'redirect_uri', 'response_type', 'scope'}
 
-   local check_return_url = check_return_url(params.client_id, params.redirect_uri)
-   ngx.log(0, "check_return_url ="..check_return_url)
    local response_type_present = params["response_type"] == 'code' or params["response_type"] == 'token'
-   ngx.log(0, "response_type_present ="..response_type_present)
-   
-   local conditions_met = check_return_url and response_type_present and ts.required_params_present(required_params, params) 
 
-   ngx.log(0, "conditions_met="..conditions_met)
-   
-   if conditions_met then
-      redirect_to_login(params)
-   else
-      return false, 'invalid_request'
-   end
-      ts.error("we should never be here")
-   end
+  if check_return_url(params.client_id, params.redirect_uri) and
+      response_type_present and
+      ts.required_params_present(required_params, params)  then
+    redirect_to_login(params)
+  else
+    return false, 'invalid_request'
+  end
+    ts.error("we should never be here")
+  end
 
 -- returns a unique string for the client_id. it will be short lived
 function nonce(client_id)
