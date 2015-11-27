@@ -47,7 +47,7 @@ if ts.required_params_present({'state', 'response_type'}, params) then
       ngx.say("failed to hmset: ", err)
       ngx.exit(ngx.HTTP_OK)
     end
-  else if params.response_type == 'token' then
+  elseif params.response_type == 'token' then
      local access_token = client_data.access_token
      -- call endpoint to store token
      local stored = ngx.location.capture("/_oauth/token", { vars = { token = access_token, client_id = client_data.client_id, username = params.username } })
