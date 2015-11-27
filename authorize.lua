@@ -60,7 +60,7 @@ function redirect_to_login(params)
 
    -- TODO: If the login_url has already the parameter state bad
    -- things are to happen
-   ngx.redirect(ngx.var.login_url .. "?scope=".. params.scope .. "&state=" .. n)
+   ngx.redirect(ngx.var.login_url .. "?scope=".. params.scope .. "&state=" .. n .. "&response_type=" .. params.response_type)
    ngx.exit(ngx.HTTP_OK)
 end
 
