@@ -36,7 +36,7 @@ if ts.required_params_present({'state', 'response_type'}, params) then
      ok, err =  red:hmset("c:".. client_data.client_id, {client_id = client_data.client_id,
 						       client_secret = client_data.secret_id,
 						       redirect_uri = client_data.redirect_uri,
-						       pre_access_token = client_data.pre_access_token,
+						       access_token = client_data.access_token,
 						       code = code,
                          user_id = params.username })
 
@@ -50,7 +50,10 @@ if ts.required_params_present({'state', 'response_type'}, params) then
   elseif params.response_type == 'token' then
      local access_token = client_data.access_token
      -- call endpoint to store token
-     local stored = ngx.location.capture("/_oauth/token", { vars = { token = access_token, client_id = client_data.client_id, username = params.username } })
+     local stored = ngx.location.capture("/_oauth/token", {method = ngx.HTTP_POST, body = "provider_key=" ..ngx.var.provider_key ..
+                                         "&app_id=".. client_data.client_id ..
+                                         "&token=".. access_token..
+                                         (params.username and "&username="..params.username or "")})
      
       if stored.status ~= 200 then
         ngx.say("Error. Unable to store access_token in 3scale")
