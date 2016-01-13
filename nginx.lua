@@ -18,8 +18,9 @@ service_2555417724321 = {
   no_match_status = 404,
   auth_failed_status = 403,
   auth_missing_status = 403,
-  secret_token = 'Shared_secret_sent_from_proxy_to_API_backend_CHANGE_ME'
+  secret_token = 'Shared_secret_sent_from_proxy_to_API_backend_1d59763e785369ae'
 }
+
 
 -- Logging Helpers
 function show_table(a)
@@ -117,6 +118,7 @@ function build_querystring(query)
   return string.sub(qstr, 0, #qstr-1)
 end
 
+
 ---
 -- Builds a query string from a table.
 --
@@ -167,7 +169,7 @@ end
 
 matched_rules2 = ""
 
-  function extract_usage_2555417724321(params, request)
+  function extract_usage_2555417724321(request)
   local t = string.split(request," ")
   local method = t[1]
   local q = string.split(t[2], "?")
@@ -179,25 +181,63 @@ matched_rules2 = ""
   local params = {}
 
   local args = get_auth_params(nil, method)
-             local m =  ngx.re.match(path,[=[^/api/user/([\w_\.-]+).json]=])
+    local m =  ngx.re.match(path,[=[^/api/meals\.json]=])
   if (m and method == "GET") then
-     -- rule: /api/user/{userid}.json --
-         params.userid = m[1]
-         table.insert(matched_rules, "/api/user/{userid}.json")
+  -- rule: /api/meals.json --
+          
+      table.insert(matched_rules, "/api/meals.json")
 
-         usage_t["hits"] = set_or_inc(usage_t, "hits", 1)
-     found = true
-  end
-  
+      usage_t["meals"] = set_or_inc(usage_t, "meals", 1)
+      found = true
+      end
+
+  local m =  ngx.re.match(path,[=[^/api/activities\.json]=])
+  if (m and method == "GET") then
+  -- rule: /api/activities.json --
+          
+      table.insert(matched_rules, "/api/activities.json")
+
+      usage_t["activities"] = set_or_inc(usage_t, "activities", 1)
+      found = true
+      end
+
+  local m =  ngx.re.match(path,[=[^/api/user/([\w_\.-]+)\.json]=])
+  if (m and method == "GET") then
+  -- rule: /api/user/{id}.json --
+          params["id"] = m[1]
+      table.insert(matched_rules, "/api/user/{id}.json")
+
+      usage_t["get_user"] = set_or_inc(usage_t, "get_user", 1)
+      found = true
+      end
+
+  local m =  ngx.re.match(path,[=[^/api/food/([\w_\.-]+)\.json]=])
+  if (m and method == "GET") then
+  -- rule: /api/food/{id}.json --
+          params["id"] = m[1]
+      table.insert(matched_rules, "/api/food/{id}.json")
+
+      usage_t["hits"] = set_or_inc(usage_t, "hits", 1)
+      found = true
+      end
+
+  local m =  ngx.re.match(path,[=[^/api/activity/([\w_\.-]+)\.json]=])
+  if (m and method == "GET") then
+  -- rule: /api/activity/{id}.json --
+          params["id"] = m[1]
+      table.insert(matched_rules, "/api/activity/{id}.json")
+
+      usage_t["hits"] = set_or_inc(usage_t, "hits", 1)
+      found = true
+      end
+
   -- if there was no match, usage is set to nil and it will respond a 404, this behavior can be changed
   if found then
-    matched_rules2 = table.concat(matched_rules, ", ")
-    
-    return build_querystring(usage_t)
+   matched_rules2 = table.concat(matched_rules, ", ")
+   return build_querystring(usage_t)
   else
     return nil
   end
-
 end
 
 --[[
@@ -214,7 +254,6 @@ function get_auth_params(where, method)
     ngx.req.read_body()
     params = ngx.req.get_post_args()
   end
-  
   return first_values(params)
 end
 
@@ -225,7 +264,7 @@ function get_credentials_app_id_app_key(params, service)
 end
 
 function get_credentials_access_token(params, service)
-  if params["access_token"] == nil or params["authorization"] == nil then -- TODO: check where the params come
+  if params["access_token"] == nil and params["authorization"] == nil then -- TODO: check where the params come
     error_no_credentials(service)
   end
 end
@@ -238,7 +277,6 @@ end
 
 function get_debug_value()
   local h = ngx.req.get_headers()
-  
   if h["X-3scale-debug"] == os.getenv("THREESCALE_PROVIDER_KEY") then
     return true
   else
@@ -255,32 +293,22 @@ function authorize(auth_strat, params, service)
 end
 
 function oauth(params, service)
-  if ngx.var.usage ~= nil  then
-    ngx.var.usage = add_trans(ngx.var.usage)
-  end
-
   ngx.var.cached_key = ngx.var.cached_key .. ":" .. ngx.var.usage
-  ngx.log(0,'ngx.var.cached_key='..ngx.var.cached_key)
-  ngx.log(0,'ngx.var.access_token='..ngx.var.access_token)
   local access_tokens = ngx.shared.api_keys
   local is_known = access_tokens:get(ngx.var.cached_key)
 
   if is_known ~= 200 then
-    local res = ngx.location.capture("/_threescale/toauth_authorize?access_token="..
-      params.access_token ..
-      "&user_id="..
-      params.userid,
-      { share_all_vars = true })
-    ngx.log(0, res.body)
-    ngx.log(0, ngx.var.cached_key)
-
-    if res.status == 200   then
-      access_tokens:set(ngx.var.cached_key,200)
-    else
+    local res = ngx.location.capture("/threescale_oauth_authrep", { share_all_vars = true })
+     log(res)
+    -- IN HERE YOU DEFINE THE ERROR IF CREDENTIALS ARE PASSED, BUT THEY ARE NOT VALID
+    if res.status ~= 200   then
       access_tokens:delete(ngx.var.cached_key)
       ngx.status = res.status
       ngx.header.content_type = "application/json"
+      ngx.var.cached_key = nil
       error_authorization_failed(service)
+    else
+      access_tokens:set(ngx.var.cached_key,200)
     end
     ngx.var.cached_key = nil
   end
@@ -303,10 +331,10 @@ function authrep(params, service)
             ngx.var.cached_key = nil
       error_authorization_failed(service)
     else
-      api_keys:set(ngx.var.cached_key,200)
+            api_keys:set(ngx.var.cached_key,200)
     end
 
-    ngx.var.cached_key = nil
+        ngx.var.cached_key = nil
   end
 end
 
@@ -319,6 +347,7 @@ function add_trans(usage)
     return string.sub(ret, 1, -2)
 end
 
+
 local params = {}
 local host = ngx.req.get_headers()["Host"]
 local auth_strat = ""
@@ -328,14 +357,18 @@ if ngx.var.service_id == '2555417724321' then
   service = service_2555417724321 --
   ngx.var.secret_token = service.secret_token
 
-  ngx.var.access_token = params.access_token..":"..params.userid
-  params.access_token = parameters.access_token
+  -- extract user_id from relevant calls
+  local user =  ngx.re.match(ngx.var.uri,[=[^/api/user/([\w_\.-]+)\.json]=])
+
+  -- Do this to remove token type, e.g Bearer from token
+  ngx.var.access_token = string.split(parameters["authorization"], " ")[2]..(user and ":"..user[1] or "")
+  params.access_token =  ngx.var.access_token
   get_credentials_access_token(params, service_2555417724321)
   ngx.var.cached_key = "2555417724321" .. ":" .. params.access_token
   auth_strat = "oauth"
   ngx.var.service_id = "2555417724321"
   ngx.var.proxy_pass = "https://backend_user-goals-api.herokuapp.com"
-  ngx.var.usage = extract_usage_2555417724321(params, ngx.var.request)
+  ngx.var.usage = extract_usage_2555417724321(ngx.var.request)
 end
 
 ngx.var.credentials = build_query(params)
@@ -358,6 +391,9 @@ if get_debug_value() then
   ngx.header["X-3scale-usage"]         = ngx.var.usage
   ngx.header["X-3scale-hostname"]      = ngx.var.hostname
 end
+
+-- this would be better with the whole authrep call, with user_id, and everything so that
+-- it can be replayed if it's a cached response
 
 authorize(auth_strat, params, service)
 
