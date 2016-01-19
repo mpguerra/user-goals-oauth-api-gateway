@@ -364,7 +364,6 @@ if ngx.var.service_id == '2555417724321' then
   -- Do this to remove token type, e.g Bearer from token
   ngx.var.access_token = string.split(parameters["authorization"], " ")[2]..(user and ":"..user[1] or "")
   params.access_token =  ngx.var.access_token
-  -- get_credentials_access_token(params, service_2555417724321)
   ngx.var.cached_key = "2555417724321" .. ":" .. params.access_token
   auth_strat = "oauth"
   ngx.var.service_id = "2555417724321"
