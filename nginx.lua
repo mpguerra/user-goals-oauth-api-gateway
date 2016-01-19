@@ -354,6 +354,7 @@ local auth_strat = ""
 local service = {}
 if ngx.var.service_id == '2555417724321' then
   local parameters = get_auth_params("headers", string.split(ngx.var.request, " ")[1] )
+  get_credentials_access_token(parameters, service_2555417724321)
   service = service_2555417724321 --
   ngx.var.secret_token = service.secret_token
 
@@ -363,7 +364,7 @@ if ngx.var.service_id == '2555417724321' then
   -- Do this to remove token type, e.g Bearer from token
   ngx.var.access_token = string.split(parameters["authorization"], " ")[2]..(user and ":"..user[1] or "")
   params.access_token =  ngx.var.access_token
-  get_credentials_access_token(params, service_2555417724321)
+  -- get_credentials_access_token(params, service_2555417724321)
   ngx.var.cached_key = "2555417724321" .. ":" .. params.access_token
   auth_strat = "oauth"
   ngx.var.service_id = "2555417724321"
